@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+env/
+yt-dlp.exe
+bin/yt-dlp.exe
+.idea/
+.vscode/

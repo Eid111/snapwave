@@ -1,0 +1,114 @@
+/* ==========================================================================
+   SnapWave Design System & Custom Styles
+   ========================================================================== */
+
+html {
+  background: #F8F9FB;
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+html[dir="rtl"] body {
+  font-family: 'IBM Plex Sans Arabic', 'Manrope', system-ui, sans-serif;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  background: #F8F9FB;
+}
+
+/* Faint engineering grid, fades out below the hero section */
+.grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(255, 85, 0, .09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 85, 0, .09) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 280px, transparent 560px);
+          mask-image: linear-gradient(to bottom, #000 0, #000 280px, transparent 560px);
+}
+
+.hair {
+  border: 1px solid #E6E9EF;
+}
+
+/* Skeleton Loading Shimmer */
+.skel {
+  background: linear-gradient(90deg, #EEF1F5 25%, #E1E5EC 50%, #EEF1F5 75%);
+  background-size: 200% 100%;
+  animation: sh 1.4s linear infinite;
+}
+
+@keyframes sh {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Progress bar inside buttons & search bar */
+.scan {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  height: 2px;
+  background: #FF5500;
+  transition: width .25s ease;
+}
+
+.indet {
+  position: absolute;
+  inset-block-end: 0;
+  height: 2px;
+  width: 30%;
+  background: #FF5500;
+  animation: ind 1.1s ease-in-out infinite;
+}
+
+@keyframes ind {
+  0% { inset-inline-start: -30%; }
+  100% { inset-inline-start: 100%; }
+}
+
+.dl:active {
+  transform: translateY(1px) scale(.98);
+}
+
+/* Advertising Containers & Placeholders */
+.ad-stripe {
+  background-image: repeating-linear-gradient(135deg, rgba(15, 23, 42, .04) 0 8px, transparent 8px 16px);
+}
+
+.ad-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+/* FAQ Details/Summary Accordion */
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details[open] .chev {
+  transform: rotate(180deg);
+}
+
+:focus-visible {
+  outline: 2px solid #FF5500;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+.env
+tests/
+*.bat
+yt-dlp.exe
+bin/yt-dlp.exe
