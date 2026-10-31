@@ -3,8 +3,41 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SnapWave – Video & Audio Fast Downloader</title>
-  <meta name="description" content="Paste a link, pick a format, download. SnapWave pulls video and audio from YouTube, TikTok, Instagram, Facebook, and more. Direct stream pipeline with zero server storage.">
+  <!-- Search Engine Optimization (SEO) -->
+  <title>SnapWave – Video & Audio Fast Downloader | تنزيل الفيديوهات والصوتيات</title>
+  <meta name="description" content="أسرع أداة مجانية لتنزيل الفيديوهات والصوتيات من يوتيوب، تيك توك، فيسبوك، وإنستغرام بجودات أصلية 4K و 1080p و MP3 بدون تخزين على السيرفر وبدون إعلانات مزعجة.">
+  <meta name="keywords" content="تنزيل فيديو, تحميل من يوتيوب, تحميل تيك توك, تحميل ريلز انستقرام, video downloader, youtube downloader, tiktok downloader, mp3 converter">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="/">
+
+  <!-- OpenGraph Meta Tags (WhatsApp, Facebook, Telegram) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SnapWave – تنزيل مقاطع الفيديو والصوتيات بجودة فائقة">
+  <meta property="og:description" content="الصق الرابط، اختر الجودة، وحمّل فوراً. يدعم يوتيوب، تيك توك، فيسبوك، وإنستغرام.">
+  <meta property="og:image" content="/assets/favicon.svg">
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SnapWave – Fast Video & Audio Downloader">
+  <meta name="twitter:description" content="Download high-quality videos and audio instantly from YouTube, TikTok, Facebook and Instagram.">
+  <meta name="twitter:image" content="/assets/favicon.svg">
+
+  <!-- Schema.org JSON-LD Structured Data for Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "SnapWave",
+    "description": "High-performance direct video and audio streaming downloader for YouTube, TikTok, Facebook, and Instagram.",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "All",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
 
   <!-- Favicon -->
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
@@ -67,6 +100,11 @@
       </div>
     </div>
   </header>
+
+  <!-- Live Dynamic Announcement Banner (Controlled from /admin) -->
+  <div id="announcementBanner" class="hidden bg-gradient-to-r from-[#FF5500] to-[#FF6B1F] text-white text-xs sm:text-sm font-medium py-2 px-4 text-center shadow-sm transition-all duration-300">
+    <span id="announcementText"></span>
+  </div>
 
   <main>
     <!-- Ad Slot: Leaderboard Top Banner (728x90) -->

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
 from pathlib import Path
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import HTMLResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -85,3 +85,35 @@ async def serve_favicon():
     if fav.exists():
         return FileResponse(str(fav), media_type="image/svg+xml")
     return HTMLResponse("")
+
+@app.get("/admin", response_class=HTMLResponse)
+async def serve_admin():
+    admin_file = FRONTEND_DIR / "admin.html"
+    if admin_file.exists():
+        return HTMLResponse(content=admin_file.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>SnapWave Admin Dashboard</h1>")
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def serve_robots(request: Request):
+    host_url = f"{request.url.scheme}://{request.url.netloc}"
+    return f"""User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: {host_url}/sitemap.xml
+"""
+
+@app.get("/sitemap.xml")
+async def serve_sitemap(request: Request):
+    host_url = f"{request.url.scheme}://{request.url.netloc}"
+    xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{host_url}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>"""
+    return Response(content=xml_content, media_type="application/xml")
+

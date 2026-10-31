@@ -212,7 +212,6 @@
     UI.applyTranslations();
     UI.renderPlatforms();
     initEventListeners();
-    AdManager.init();
 
     // Check backend health & ping
     const res = await Api.ping();
@@ -220,6 +219,33 @@
     if (pingEl) {
       pingEl.textContent = `${res.latency} ms`;
     }
+
+    // Load live site configuration from admin panel
+    try {
+      const cfg = await Api.getConfig();
+      if (cfg) {
+        // 1. Render announcement banner if active
+        if (cfg.announcement_active && cfg.announcement_text) {
+          const banner = document.getElementById('announcementBanner');
+          const textEl = document.getElementById('announcementText');
+          if (banner && textEl) {
+            textEl.textContent = cfg.announcement_text;
+            banner.classList.remove('hidden');
+          }
+        }
+        // 2. Synchronize Ads settings from dashboard
+        if (window.AdConfig) {
+          AdConfig.ENABLE_ADS = !!cfg.enable_ads;
+          if (cfg.direct_ad_url) {
+            AdConfig.DIRECT_AD_URL = cfg.direct_ad_url;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch site config', e);
+    }
+
+    AdManager.init();
   }
 
   document.addEventListener('DOMContentLoaded', init);

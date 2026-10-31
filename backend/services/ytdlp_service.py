@@ -7,6 +7,7 @@ from fastapi import HTTPException
 
 from backend.core.config import YTDLP_EXE
 from backend.core.security import validate_public_url
+from backend.core.site_settings import increment_extractions
 from backend.services.resolvers import resolve
 
 class YtDlpService:
@@ -152,6 +153,12 @@ class YtDlpService:
             "codec": "MP3 · CBR",
             "mb": round((128 * 1000 * dur) / (8 * 1024 * 1024), 1)
         })
+
+        # Record successful extraction metric
+        try:
+            increment_extractions()
+        except Exception:
+            pass
 
         return {
             "host": host,

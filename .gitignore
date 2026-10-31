@@ -7,5 +7,6 @@ __pycache__/
 env/
 yt-dlp.exe
 bin/yt-dlp.exe
+site_config.json
 .idea/
 .vscode/

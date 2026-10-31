@@ -41,6 +41,19 @@ const Api = {
   },
 
   /**
+   * Fetches dynamic site settings managed via /admin
+   */
+  async getConfig() {
+    try {
+      const res = await fetch(`${API_BASE}/config`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * Builds the stream download URL with query parameters.
    */
   buildDownloadUrl(fmtId, targetUrl, title, referer) {
