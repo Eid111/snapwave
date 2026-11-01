@@ -9,6 +9,16 @@ from backend.main import app as fastapi_app
 
 # If running inside Hugging Face Spaces (Gradio SDK)
 try:
+    # ZeroGPU validation hook for Hugging Face Spaces
+    try:
+        import spaces
+        @spaces.GPU(duration=10)
+        def hf_zerogpu_startup():
+            return "ready"
+        hf_zerogpu_startup()
+    except Exception:
+        pass
+
     import gradio as gr
     # Create companion Gradio block for Hugging Face healthcheck
     with gr.Blocks(title="SnapWave Engine") as demo:
