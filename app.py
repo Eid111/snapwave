@@ -1,44 +1,49 @@
 # -*- coding: utf-8 -*-
 """
 SnapWave - Production ASGI Entrypoint & Cloud Spaces Runner
-Supports: Local, Docker, and Hugging Face Spaces
+Supports: Local, Docker, and Hugging Face ZeroGPU Spaces
 """
 import os
 import sys
-from backend.main import app as fastapi_app
+from pathlib import Path
 
-# If running inside Hugging Face Spaces (Gradio SDK)
+# ZeroGPU Compatibility Layer
 try:
-    # ZeroGPU validation hook for Hugging Face Spaces
-    try:
-        import spaces
-        @spaces.GPU(duration=10)
-        def hf_zerogpu_startup():
-            return "ready"
-        hf_zerogpu_startup()
-    except Exception:
-        pass
+    import spaces
+    @spaces.GPU
+    def hf_zerogpu_hook():
+        return True
+except Exception:
+    pass
 
-    import gradio as gr
-    # Create companion Gradio block for Hugging Face healthcheck
-    with gr.Blocks(title="SnapWave Engine") as demo:
-        gr.HTML("""
-        <div style="text-align:center; padding: 20px; font-family:sans-serif;">
-            <h2>🚀 SnapWave Video & Audio Downloader Engine</h2>
-            <p>The system is online. Click below to enter the full web application:</p>
-            <a href="/" target="_self" style="display:inline-block; padding:10px 24px; background:#FF5500; color:white; border-radius:8px; text-decoration:none; font-weight:bold;">Open SnapWave App</a>
-        </div>
-        """)
+import gradio as gr
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from backend.main import app as fastapi_app
+from backend.core.config import FRONTEND_DIR
 
-    # Mount Gradio at /gradio so root '/' serves our custom UI directly
-    app = gr.mount_gradio_app(fastapi_app, demo, path="/gradio")
-except ImportError:
-    app = fastapi_app
-    demo = None
+# Custom Fullscreen Web Wrapper for Gradio
+custom_css = """
+footer { display: none !important; }
+.gradio-container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+#snapwave-frame { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; z-index: 999999; }
+"""
+
+with gr.Blocks(title="SnapWave – Fast Video & Audio Downloader", css=custom_css) as demo:
+    gr.HTML("""
+    <iframe id="snapwave-frame" src="/app" allow="clipboard-read; clipboard-write"></iframe>
+    """)
+
+# Mount all FastAPI routes and assets directly to Gradio's internal ASGI app
+demo.app.mount("/app", fastapi_app)
+if FRONTEND_DIR.exists():
+    demo.app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
+    demo.app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
+    demo.app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="assets")
+
+# Include API routers directly onto root for direct fetch calls
+demo.app.include_router(fastapi_app.router)
 
 if __name__ == "__main__":
-    import uvicorn
-    # Hugging Face Spaces standard port is 7860, local default is 8000
-    default_port = 7860 if "SPACE_ID" in os.environ else 8000
-    port = int(os.environ.get("PORT", default_port))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # Gradio handles ZeroGPU port bindings automatically
+    demo.launch(server_name="0.0.0.0")
