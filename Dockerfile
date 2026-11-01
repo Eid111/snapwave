@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=7860
+    PORT=8080
 
 # Install system dependencies (curl and ffmpeg for audio/video processing)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
 
-# Set up non-root user (required for Hugging Face Spaces & security)
+# Set up non-root user
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
@@ -35,8 +35,6 @@ COPY --chown=user:user frontend/ ./frontend/
 COPY --chown=user:user static/ ./static/
 COPY --chown=user:user app.py .
 
-# Expose standard port 7860
-EXPOSE 7860
+EXPOSE 8080
 
-# Start FastAPI via Uvicorn
-CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["python", "app.py"]
