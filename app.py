@@ -17,9 +17,10 @@ except Exception:
     pass
 
 import gradio as gr
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from backend.main import app as fastapi_app
+from backend.api.v1.router import api_v1_router
 from backend.core.config import FRONTEND_DIR
 
 # Custom Fullscreen Web Wrapper for Gradio
@@ -42,7 +43,15 @@ if FRONTEND_DIR.exists():
     demo.app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="assets")
 
 # Include API routers directly onto root for direct fetch calls
-demo.app.include_router(fastapi_app.router)
+demo.app.include_router(api_v1_router, prefix="/api/v1")
+demo.app.include_router(api_v1_router, prefix="/api")
+
+@demo.app.get("/admin", response_class=HTMLResponse)
+def serve_admin():
+    admin_file = FRONTEND_DIR / "admin.html"
+    if admin_file.exists():
+        return HTMLResponse(content=admin_file.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>SnapWave Admin</h1>")
 
 if __name__ == "__main__":
     # Gradio handles ZeroGPU port bindings automatically
