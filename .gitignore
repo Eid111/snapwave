@@ -8,5 +8,6 @@ env/
 yt-dlp.exe
 bin/yt-dlp.exe
 site_config.json
+cloudflared.exe
 .idea/
 .vscode/
