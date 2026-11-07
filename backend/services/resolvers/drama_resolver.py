@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import re
-import requests
+import urllib.parse
+from fastapi import HTTPException
+
 from backend.core.config import DEFAULT_HEADERS
+from backend.core.security import request_public_url, validate_public_url
 from .vidaraa import resolve_vidaraa
 
 def is_rumble_alive(embed_url: str) -> bool:
     try:
-        r = requests.get(
+        r = request_public_url(
+            "GET",
             embed_url,
             headers={**DEFAULT_HEADERS, 'Referer': 'https://www.deep-drama.com/'},
             timeout=6
@@ -30,7 +34,8 @@ def resolve_drama_site(target_url: str):
     }
 
     try:
-        r = requests.get(target_url, headers=DEFAULT_HEADERS, timeout=12)
+        target_url = validate_public_url(target_url)
+        r = request_public_url("GET", target_url, headers=DEFAULT_HEADERS, timeout=12)
         html = r.text
     except Exception as e:
         result["message"] = f"Failed to fetch page: {e}"
@@ -57,6 +62,12 @@ def resolve_drama_site(target_url: str):
         return result
 
     for name, src in servers:
+        src = urllib.parse.urljoin(target_url, src)
+        try:
+            src = validate_public_url(src)
+        except HTTPException:
+            continue
+
         if any(v in src.lower() for v in ['vidaraa', 'vidara', 'vfast']):
             stream_url, v_title = resolve_vidaraa(src)
             if stream_url:

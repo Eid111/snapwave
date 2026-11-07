@@ -55,11 +55,10 @@
     btn.dataset.busy = '1';
     lbl.textContent = I18n.t('prep');
     btn.classList.add('opacity-90');
+    if (scan) scan.style.width = '40%';
 
-    // Trigger Monetization / Ad hook
     AdManager.onDownloadClick();
 
-    // Trigger Stream Download via Anchor
     const dlUrl = Api.buildDownloadUrl(
       fmt.id,
       state.data.target_url,
@@ -69,35 +68,46 @@
 
     const a = document.createElement('a');
     a.href = dlUrl;
+    a.rel = 'noopener';
     a.setAttribute('download', '');
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 
-    // Simulate UX progress animation on button scanner
-    for (let p = 20; p <= 100; p += 25) {
-      scan.style.width = p + '%';
-      lbl.textContent = Math.round(p) + '%';
-      await sleep(90);
-    }
-
-    btn.classList.replace('bg-ember', 'bg-emerald-600');
-    btn.classList.remove('hover:bg-ember-hi');
-    lbl.textContent = I18n.t('done');
-    scan.style.width = '0';
+    await sleep(400);
+    if (scan) scan.style.width = '100%';
+    lbl.textContent = I18n.t('started');
     UI.showToast(I18n.t('started') + ': ' + fmt.res + ' ' + fmt.container);
 
     setTimeout(() => {
       delete btn.dataset.busy;
       btn.classList.remove('opacity-90');
-      btn.classList.replace('bg-emerald-600', 'bg-ember');
-      btn.classList.add('hover:bg-ember-hi');
       lbl.textContent = I18n.t('dl');
-    }, 2200);
+      if (scan) scan.style.width = '0';
+    }, 1800);
+  }
+
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.documentElement.style.colorScheme = savedTheme;
+    UI.updateThemeIcon(savedTheme);
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.documentElement.style.colorScheme = next;
+    localStorage.setItem('theme', next);
+    UI.updateThemeIcon(next);
   }
 
   function initEventListeners() {
     const urlInput = UI.elements.url();
+
+    // Theme toggle
+    document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
 
     // Input events
     urlInput.addEventListener('input', () => {
@@ -212,7 +222,16 @@
     UI.applyTranslations();
     UI.renderPlatforms();
     initEventListeners();
+    initTheme();
 
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(e => console.error('SW register failed', e));
+      });
+    }
+
+    // Check backend health & ping
     // Check backend health & ping
     const res = await Api.ping();
     const pingEl = UI.elements.ping();
@@ -236,9 +255,9 @@
         // 2. Synchronize Ads settings from dashboard
         if (window.AdConfig) {
           AdConfig.ENABLE_ADS = !!cfg.enable_ads;
-          if (cfg.direct_ad_url) {
-            AdConfig.DIRECT_AD_URL = cfg.direct_ad_url;
-          }
+          AdConfig.DIRECT_AD_URL = (cfg.direct_ad_url && isSafeHttpUrl(cfg.direct_ad_url))
+            ? cfg.direct_ad_url
+            : '';
         }
       }
     } catch (e) {

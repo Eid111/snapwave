@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT_DIR))
 
 from fastapi.testclient import TestClient
 from backend.main import app
-from backend.core.security import extract_limiter
+from backend.core.security import download_limiter, extract_limiter, login_limiter
 
 class TestReport:
     def __init__(self):
@@ -82,6 +82,8 @@ class TestReport:
 def run_all_tests():
     report = TestReport()
     extract_limiter.clients.clear()
+    download_limiter.clients.clear()
+    login_limiter.clients.clear()
 
     # Standard client for single-threaded functional & security checks
     client = TestClient(app, client=("198.51.100.1", 50000))
@@ -149,7 +151,7 @@ def run_all_tests():
 
     giant_url = "https://example.com/" + "a" * 4000
     r = client.post("/api/v1/extract", json={"url": giant_url})
-    report.record(cat, "TC-BVA-06", "Extreme boundary string (4,000 chars) handled safely without crash", r.status_code in [400, 404, 500])
+    report.record(cat, "TC-BVA-06", "Extreme boundary string (4,000 chars) rejected as too long", r.status_code == 400)
 
     # =========================================================================
     # 3. ADVANCED SECURITY, OWASP TOP 10 & FUZZING
@@ -217,13 +219,26 @@ def run_all_tests():
     r = client.post("/api/v1/extract", json={"url": "https://example.com/\r\nSet-Cookie:admin=1"})
     report.record(cat, "TC-SEC-15", "CRLF Injection: Carriage return line feed characters neutralized", r.status_code in [400, 404])
 
+    r = client.post("/api/v1/extract", json={"url": "http://2130706433/"})
+    report.record(cat, "TC-SEC-16", "SSRF: Decimal-encoded loopback IP blocked with 403", r.status_code == 403)
+
+    r = client.get("/api/v1/download", params={"url": "http://127.0.0.1/secret", "quality": "best"})
+    report.record(cat, "TC-SEC-17", "SSRF: Download endpoint blocks loopback targets with 403", r.status_code == 403)
+
+    r = client.get("/api/v1/admin/settings")
+    report.record(cat, "TC-SEC-18", "Admin settings require authentication", r.status_code == 401)
+
+    r = client.post("/api/v1/admin/login", json={"password": "definitely-wrong-password"})
+    report.record(cat, "TC-SEC-19", "Admin login rejects incorrect password", r.status_code == 401)
+
     # =========================================================================
     # 4. CONCURRENCY, STRESS & RATE LIMITING RESILIENCE
     # =========================================================================
     cat = "4. Stress, Concurrency & Rate Limiting"
 
-    # Reset limiter for this specific category
     extract_limiter.clients.clear()
+    download_limiter.clients.clear()
+    login_limiter.clients.clear()
 
     # 4.1 Single-IP Rapid Rate Limit Threshold
     single_ip_client = TestClient(app, client=("198.51.100.77", 40001))

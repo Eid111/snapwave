@@ -2,7 +2,8 @@
 import json
 import subprocess
 import urllib.parse
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from fastapi import HTTPException
 
 from backend.core.config import YTDLP_EXE
@@ -10,61 +11,67 @@ from backend.core.security import validate_public_url
 from backend.core.site_settings import increment_extractions
 from backend.services.resolvers import resolve
 
+
 class YtDlpService:
     @staticmethod
-    def extract_info(raw_url: str) -> Dict[str, Any]:
-        # Enforce strict URL validation & anti-SSRF protections
+    async def extract_info(raw_url: str) -> Dict[str, Any]:
         url = validate_public_url(raw_url)
 
-        # 1. Resolve custom/drama links if applicable
         res_data = resolve(url)
-        target_url = res_data["url"]
-        referer = res_data.get("referer") or target_url
+        target_url = validate_public_url(res_data["url"])
+        referer_raw = res_data.get("referer") or target_url
+        try:
+            referer = validate_public_url(referer_raw)
+        except HTTPException:
+            referer = target_url
         custom_title = res_data.get("title")
 
-        # 2. Query yt-dlp binary for JSON metadata
         cmd = [
             YTDLP_EXE,
             "--dump-json",
             "--no-playlist",
-            "--referer", referer,
-            target_url
+            "--no-warnings",
+            "--referer",
+            referer,
+            target_url,
         ]
 
         try:
-            proc = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="ignore",
-                timeout=30
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
-            if proc.returncode != 0 or not proc.stdout.strip():
-                err_msg = proc.stderr.strip() or "Failed to inspect video link"
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
+
+            if proc.returncode != 0 or not stdout.strip():
+                err_msg = stderr.decode("utf-8", errors="ignore").strip() or "Failed to inspect video link"
                 if "Video not found" in err_msg or "HTTP Error 404" in err_msg:
                     err_msg = "Video is private, removed, or not found on the host."
                 elif "HTTP Error 403" in err_msg:
                     err_msg = "Access restricted or rate limited by the host."
                 raise HTTPException(status_code=400, detail=err_msg)
 
-            data = json.loads(proc.stdout.strip().split("\n")[-1])
-        except subprocess.TimeoutExpired:
+            data = json.loads(stdout.decode("utf-8", errors="ignore").strip().split("\n")[-1])
+        except asyncio.TimeoutError:
             raise HTTPException(status_code=408, detail="Request timed out while probing stream.")
         except json.JSONDecodeError:
             raise HTTPException(status_code=500, detail="Failed to parse stream metadata.")
 
-        # 3. Parse core metadata
         title = custom_title or data.get("title") or "video"
         thumbnail = data.get("thumbnail") or "/assets/favicon.svg"
+        if isinstance(thumbnail, str) and not (
+            thumbnail.startswith("http://")
+            or thumbnail.startswith("https://")
+            or thumbnail.startswith("/")
+        ):
+            thumbnail = "/assets/favicon.svg"
         duration = int(data.get("duration") or 0)
         author = data.get("uploader") or data.get("channel") or data.get("creator") or "Unknown Creator"
 
-        # Host extraction
         parsed_host = urllib.parse.urlparse(url).netloc.replace("www.", "")
         host = parsed_host or (data.get("extractor") or "web")
 
-        # 4. Formats construction
         raw_formats = data.get("formats") or []
         formats_list: List[Dict[str, Any]] = []
         seen_heights = set()
@@ -110,7 +117,7 @@ class YtDlpService:
                     "res": f"{bucket}p",
                     "tag": tag,
                     "codec": codec_disp,
-                    "mb": max(mb, 2.5)
+                    "mb": max(mb, 2.5),
                 })
 
         if not formats_list:
@@ -121,40 +128,40 @@ class YtDlpService:
                 "res": "Original",
                 "tag": "Best",
                 "codec": "H.264 · AAC",
-                "mb": 42.0
+                "mb": 42.0,
             })
 
-        # Standard Audio streams
         dur = duration if duration > 0 else 180
-        formats_list.append({
-            "id": "a320",
-            "type": "audio",
-            "container": "MP3",
-            "res": "320 kbps",
-            "tag": "High",
-            "codec": "MP3 · CBR",
-            "mb": round((320 * 1000 * dur) / (8 * 1024 * 1024), 1)
-        })
-        formats_list.append({
-            "id": "a256",
-            "type": "audio",
-            "container": "M4A",
-            "res": "256 kbps",
-            "tag": "High",
-            "codec": "AAC-LC",
-            "mb": round((256 * 1000 * dur) / (8 * 1024 * 1024), 1)
-        })
-        formats_list.append({
-            "id": "a128",
-            "type": "audio",
-            "container": "MP3",
-            "res": "128 kbps",
-            "tag": "Standard",
-            "codec": "MP3 · CBR",
-            "mb": round((128 * 1000 * dur) / (8 * 1024 * 1024), 1)
-        })
+        formats_list.extend([
+            {
+                "id": "a320",
+                "type": "audio",
+                "container": "MP3",
+                "res": "320 kbps",
+                "tag": "High",
+                "codec": "MP3 · CBR",
+                "mb": round((320 * 1000 * dur) / (8 * 1024 * 1024), 1),
+            },
+            {
+                "id": "a256",
+                "type": "audio",
+                "container": "M4A",
+                "res": "256 kbps",
+                "tag": "High",
+                "codec": "AAC-LC",
+                "mb": round((256 * 1000 * dur) / (8 * 1024 * 1024), 1),
+            },
+            {
+                "id": "a128",
+                "type": "audio",
+                "container": "MP3",
+                "res": "128 kbps",
+                "tag": "Standard",
+                "codec": "MP3 · CBR",
+                "mb": round((128 * 1000 * dur) / (8 * 1024 * 1024), 1),
+            },
+        ])
 
-        # Record successful extraction metric
         try:
             increment_extractions()
         except Exception:
@@ -169,5 +176,5 @@ class YtDlpService:
             "thumbnail": thumbnail,
             "target_url": target_url,
             "referer": referer,
-            "formats": formats_list
+            "formats": formats_list,
         }

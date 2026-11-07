@@ -4,7 +4,7 @@
 
 const T = {
   en: {
-    engine: 'v2.5 engine online',
+    engine: 'v2.6 engine online',
     ad: 'Advertisement',
     h1: 'Media, in a snap.',
     sub: 'Paste your link. Choose your format. Download instantly.',
@@ -45,7 +45,7 @@ const T = {
     ]
   },
   ar: {
-    engine: 'المحرك v2.5 متصل',
+    engine: 'المحرك v2.6 متصل',
     ad: 'إعلان',
     h1: 'وسائطك، في لحظة.',
     sub: 'الصق الرابط. اختر الصيغة. حمّل فورًا.',

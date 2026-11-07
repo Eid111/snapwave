@@ -14,7 +14,20 @@ html[dir="rtl"] body {
 
 body {
   -webkit-font-smoothing: antialiased;
-  background: #F8F9FB;
+  background:
+    radial-gradient(1200px 420px at 50% -80px, rgba(255, 85, 0, .08), transparent 60%),
+    #F8F9FB;
+}
+
+.logo-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #E6E9EF;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .8), 0 8px 20px rgba(255, 85, 0, .08);
 }
 
 /* Faint engineering grid, fades out below the hero section */

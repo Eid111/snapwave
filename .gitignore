@@ -11,3 +11,8 @@ site_config.json
 cloudflared.exe
 .idea/
 .vscode/
+--Frag*
+*.part
+*.ytdl
+*.temp
+*.tmp
