@@ -20,3 +20,11 @@ validates it at startup. The password initializes the admin account when no
 password has been configured yet and replaces recognized legacy defaults
 during a one-time migration. Do not commit real credentials to `.env.example`
 or source control.
+
+## Deploy on Render
+
+The repository includes a Render Blueprint (`render.yaml`) for a free Docker
+web service. Create a Blueprint from this GitHub repository in Render, then
+enter `ADMIN_PASSWORD` as a secret when prompted. Render provides a free
+`onrender.com` subdomain; free services spin down after inactivity and have
+ephemeral storage, so this option is intended for hobby/testing use.

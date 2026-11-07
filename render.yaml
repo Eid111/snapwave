@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: snapwave
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DEBUG
+        value: "false"
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: TRUST_PROXY
+        value: "false"
+      - key: ADMIN_PASSWORD
+        sync: false
